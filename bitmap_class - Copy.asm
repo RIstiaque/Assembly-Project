@@ -1,7 +1,6 @@
 .data
 lghtRed:	.word 0xFF6666
 help: .asciiz "I am here."
-#hi
 
 .text
 lw $t1, lghtRed($0)
