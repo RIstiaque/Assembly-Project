@@ -19,18 +19,25 @@ jal top.bottom.border
 
 # Snake-Start
 
+# Store snake parts in memory, with tail first starting at the first location after the display ends.
+
+# s4 = first memory position of the tail.
+addi $s4, $gp, 4096
+# s5 = snakeLength | Equals 4 because there will be at least 4 parts in default.
+li $s5, 4
+
 # Create Head
 lw $t1, white($0)
 addi $t0, $gp, 1984
 sw $t1, 0($t0)
 
+# Store head position
+sb $t1, 4($s4)
+
 j draw_body
 
+
 # New slate
-
-
-
-
 
 j exit
 
@@ -81,6 +88,8 @@ input: # Returns one input
 	
 
 draw_body:
+	# $s3 is previous key.
+	li $s3, 0
 	wait:
 	jal input
 	li $s6, 119
@@ -92,13 +101,23 @@ draw_body:
 	li $s6, 115
 	bne $v0, $s6, wait
 	body2:
-	la $t1, lghtGray($0)
+	jal valid_move
+	jal nxt_Square
+	lw $t1, lghtRed($0)
 	sw $t1, 0($t0)
-	add $t0, $t0, $v0
-	la $t1, white($0)
-	add $s3, $0, $v0
+	# Stores the first body part in the third position
+	sb $t0, 3($s4)
+	# $t4 is the new location from nxt_Square
+	move $t0, $t4
+	lw $t1, white($0)
+	sw $t1, 0($t0)
+	# Enter new head location in memList
+	sb $t0, 4($s4)
+	j exit
 	jal input
 	jal valid_move
+	#third body part
+	
 	
 	
 	
@@ -111,7 +130,7 @@ valid_move:
 	beq $t4, $v0, d_valid
 	li $t4, 115
 	beq $t4, $v0, s_valid
-	a_valid:
+	a_valid: # Also is the go to if no input is regsitered (aka input/$v0 = 0).
 		li $t4, 100
 		beq $t4, $v0, a_here # a is not an acceptable input to d
 		move $s3, $v0 # w or s is the input - acceptable.
@@ -135,8 +154,33 @@ valid_move:
 		move $s3, $v0 # a or d is the input - acceptable.
 		s_here:
 		jr $ra
-	
-	
+		
+nxt_Square:
+	# Subs if a
+	li $t4, 97
+	bne $t4, $s3, add_w
+	subi $t4, $t0, 4
+	jr $ra
+	# Subs if w
+	add_w:
+	li $t4, 119
+	bne $t4, $s3, add_s
+	subi $t4, $t0, 128
+	jr $ra
+	# Adds if s
+	add_s:
+	li $t4, 115
+	bne $t4, $s3, add_d
+	addi $t4, $t0, 128
+	jr $ra
+	# Adds if d
+	add_d:
+	addi $t4, $t0, 4
+	jr $ra
+
+
+
+
 	
 	
 	
