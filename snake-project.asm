@@ -179,7 +179,8 @@ nxt_Square:
 	jr $ra
 
 
-
+eat_yummy_juicy_fruit:
+	
 
 	
 	
