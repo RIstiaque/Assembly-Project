@@ -21,10 +21,10 @@ jal top.bottom.border
 
 # Store snake parts in memory, with tail first starting at the first location after the display ends.
 
-# s4 = first memory position of the tail.
+# s4 = first memory position of the list.
 addi $s4, $gp, 4096
-# s5 = snakeLength | Equals 4 because there will be at least 4 parts in default.
-li $s5, 4
+# s5 = snakeLength.
+li $s5, 0
 
 # Create Head
 lw $t1, white($0)
@@ -32,7 +32,7 @@ addi $t0, $gp, 1984
 sw $t1, 0($t0)
 
 # Store head position
-sb $t1, 4($s4)
+sb $t1, 0($s4)
 
 j draw_body
 
@@ -53,7 +53,7 @@ top.bottom.border:
 	addi $t2, $t2, 1
 	bne $t2, $t3, t.b.loop
 	jr $ra
-
+	
 sides:
 	addi $t4, $0, 0
 	addi $t5, $0, 27
@@ -67,26 +67,7 @@ sides:
 	bne $t4, $t5, jumpsides
 	jr $ra
 
-input: # Returns one input
-	li $s1, 0xffff0000
-	lw $s2, 0($s1)
-	bnez $s2, read_val
-	li $v0, 0 # If $s2 has zero, there is no value to read, ret 0	
-	jr $ra
-	read_val:
-		# Read value cause there is something there!
-		lw $v0, 4($s1)
-		jr $ra
-
-#other: #increasing head by one
-#	lw $t1, black($0)
-#	sw $t1, 0($t0)
-#	subi $t0, $t0, 4
-#	lw $t1, whte($0)
-#	sw $t1, 0($t0)
-#	j initial
 	
-
 draw_body:
 	# $s3 is previous key.
 	li $s3, 0
@@ -103,23 +84,28 @@ draw_body:
 	body2:
 	jal valid_move
 	jal nxt_Square
-	lw $t1, lghtRed($0)
-	sw $t1, 0($t0)
-	# Stores the first body part in the third position
-	sb $t0, 3($s4)
-	# $t4 is the new location from nxt_Square
-	move $t0, $t4
-	lw $t1, white($0)
-	sw $t1, 0($t0)
-	# Enter new head location in memList
-	sb $t0, 4($s4)
-	j exit
+	jal eat_yummy_juicy_fruit
 	jal input
 	jal valid_move
-	#third body part
-	
-	
-	
+	jal nxt_Square
+	jal eat_yummy_juicy_fruit
+	jal input
+	jal valid_move
+	jal nxt_Square
+	jal eat_yummy_juicy_fruit
+	# End here for testing.
+	j exit
+
+input: # Returns one input
+	li $s1, 0xffff0000
+	lw $s2, 0($s1)
+	bnez $s2, read_val
+	li $v0, 0 # If $s2 has zero, there is no value to read, ret 0	
+	jr $ra
+	read_val:
+		# Read value cause there is something there!
+		lw $v0, 4($s1)
+		jr $ra
 	
 valid_move:
 	li $t4, 97
@@ -130,6 +116,7 @@ valid_move:
 	beq $t4, $v0, d_valid
 	li $t4, 115
 	beq $t4, $v0, s_valid
+	jr $ra
 	a_valid: # Also is the go to if no input is regsitered (aka input/$v0 = 0).
 		li $t4, 100
 		beq $t4, $v0, a_here # a is not an acceptable input to d
@@ -180,19 +167,19 @@ nxt_Square:
 
 
 eat_yummy_juicy_fruit:
+	lw $t1, lghtGray($0)
+	sw $t1, 0($t0)
+	# Update snake length
+	addi $s5, $s5, 1
+	move $t0, $t4
+	add $s4, $s4, $s5
+	# Store new head at top of the "list"
+	sb $t0, 0($s4)
+	sub $s4, $s4, $s5
+	lw $t1 white($0)
+	sw $t1, 0($t0)
+	jr $ra
 	
-
-	
-	
-	
-	
-	
-	
-
-	
-	
-	
-
 exit:
 	li $v0, 10
 	syscall		# syscall to exit program
