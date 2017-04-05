@@ -4,6 +4,7 @@ drkGray:	.word 0xA9A9A9
 lghtGray:	.word 0xD3D3D3
 white:		.word 0xFFFFFF
 black:		.word 0x000000
+yel:		.word 0xFFFF00
 help: 		.asciiz "I am here."
 
 
@@ -11,7 +12,7 @@ help: 		.asciiz "I am here."
 
 # Border Start
 lw $t1, drkGray($0)
-addi $t0, $gp, 132
+addi $t0, $gp, 0
 jal top.bottom.border
 jal sides
 jal top.bottom.border
@@ -24,29 +25,29 @@ jal top.bottom.border
 # s4 = first memory position of the list.
 addi $s4, $gp, 4096
 # s5 = snakeLength.
-li $s5, 0
+li $s5, 1
 
 # Create Head
 lw $t1, white($0)
 addi $t0, $gp, 1984
+move $a0, $t0
+li $v0, 1
+syscall
 sw $t1, 0($t0)
 
 # Store head position
 sb $t1, 0($s4)
 
 j draw_body
-
-
-# New slate
-
-j exit
-
-
-
+driver:
+	jal input
+	jal valid_move
+	jal nxt_Square
+	j collision
 
 top.bottom.border:
 	addi $t2, $0, 0
-	addi $t3, $0, 30
+	addi $t3, $0, 32
 	t.b.loop:
 	sw $t1, 0($t0)
 	addi $t0, $t0, 4
@@ -56,14 +57,14 @@ top.bottom.border:
 	
 sides:
 	addi $t4, $0, 0
-	addi $t5, $0, 27
-	addi $t0, $t0, 8
+	addi $t5, $0, 30
+	#addi $t0, $t0, 4
 	jumpsides:
 	addi $t4, $t4, 1
 	sw $t1, 0($t0)
-	addi $t0, $t0, 116
+	addi $t0, $t0, 124
 	sw $t1, 0($t0)
-	addi $t0, $t0, 12
+	addi $t0, $t0, 4
 	bne $t4, $t5, jumpsides
 	jr $ra
 
@@ -172,14 +173,35 @@ eat_yummy_juicy_fruit:
 	# Update snake length
 	addi $s5, $s5, 1
 	move $t0, $t4
-	add $s4, $s4, $s5
+	add $s6, $s4, $s5
 	# Store new head at top of the "list"
-	sb $t0, 0($s4)
-	sub $s4, $s4, $s5
+	sb $t0, 0($s6)
+	#sub $s4, $s4, $s5
 	lw $t1 white($0)
 	sw $t1, 0($t0)
 	jr $ra
 	
+collision:
+	lw $t1, lghtGray($0)
+	lw $t7, 0($t4)
+	beq $t1, $t7, exit
+	lw $t1, drkGray($0)
+	beq $t1, $t7, exit
+	lw $t1, lghtRed($0)
+	bne $t1, $t7, reg_move # make this shit 
+	jal eat_yummy_juicy_fruit
+	#j gen_fruit
+
+reg_move:
+	lw $t1, white($0)
+	sw $t1, 0($t4)
+	lw $t1, lghtGray($0)
+	sw $t1, 0($t0)
+	lw $t1, black($0)
+	sw $t1, 0($s4)
+	reg_loop:
+	
+
 exit:
 	li $v0, 10
 	syscall		# syscall to exit program
