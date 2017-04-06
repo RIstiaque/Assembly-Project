@@ -23,20 +23,19 @@ jal top.bottom.border
 # Store snake parts in memory, with tail first starting at the first location after the display ends.
 
 # s4 = first memory position of the list.
+li $t5, 4
 addi $s4, $gp, 4096
 # s5 = snakeLength.
-li $s5, 1
+li $s5, 0
 
 # Create Head
 lw $t1, white($0)
 addi $t0, $gp, 1984
-move $a0, $t0
-li $v0, 1
-syscall
 sw $t1, 0($t0)
 
 # Store head position
-sb $t1, 0($s4)
+move $t1, $t0
+sw $t1, 0($s4)
 
 j draw_body
 driver:
@@ -120,25 +119,25 @@ valid_move:
 	jr $ra
 	a_valid: # Also is the go to if no input is regsitered (aka input/$v0 = 0).
 		li $t4, 100
-		beq $t4, $v0, a_here # a is not an acceptable input to d
+		beq $t4, $s3, a_here # a is not an acceptable input to d
 		move $s3, $v0 # w or s is the input - acceptable.
 		a_here:
 		jr $ra
 	w_valid:
 		li $t4, 115
-		beq $t4, $v0, w_here # w is not an acceptable input to s
+		beq $t4, $s3, w_here # w is not an acceptable input to s
 		move $s3, $v0 # a or d is the input - acceptable.
 		w_here:
 		jr $ra
 	d_valid:
 		li $t4, 97
-		beq $t4, $v0, d_here # d is not an acceptable input to a
+		beq $t4, $s3, d_here # d is not an acceptable input to a
 		move $s3, $v0 # w or s is the input - acceptable.
 		d_here:
 		jr $ra
 	s_valid:
 		li $t4, 119
-		beq $t4, $v0, s_here # s is not an acceptable input to w
+		beq $t4, $s3, s_here # s is not an acceptable input to w
 		move $s3, $v0 # a or d is the input - acceptable.
 		s_here:
 		jr $ra
@@ -173,9 +172,10 @@ eat_yummy_juicy_fruit:
 	# Update snake length
 	addi $s5, $s5, 1
 	move $t0, $t4
-	add $s6, $s4, $s5
+	mul $s6, $s5, $t5
+	add $s6, $s4, $s6
 	# Store new head at top of the "list"
-	sb $t0, 0($s6)
+	sw $t0, 0($s6)
 	#sub $s4, $s4, $s5
 	lw $t1 white($0)
 	sw $t1, 0($t0)
