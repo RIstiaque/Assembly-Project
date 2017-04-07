@@ -201,8 +201,9 @@ gen_fruit: #Generates new fruit
 		li $a1, 991 # gen a random number with uppper bound (3964/4)
 		li $v0, 42
 		syscall
-	
-		mul $a0, $a0, $s6  #multiply that number by four so it is a valid square address
+		
+		li $t5, 4
+		mul $a0, $a0, $t5  #multiply that number by four so it is a valid square address
 		add $a0, $gp, $a0 #check color of that random square
 		lw $t7, 0($a0)
 	
