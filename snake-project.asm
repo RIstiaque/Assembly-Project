@@ -197,7 +197,23 @@ collision:
 	#j gen_fruit
 
 gen_fruit: #Generates new fruit
+	random:  #loops until a suitable place for fruit gen is found
+		li $a1, 991 # gen a random number with uppper bound (3964/4)
+		li $v0, 42
+		syscall
 	
+		mul $a0, $a0, $s6  #multiply that number by four so it is a valid square address
+		add $a0, $gp, $a0 #check color of that random square
+		lw $t7, 0($a0)
+	
+		lw $t1, black
+	
+		bne $t7, $t1, random  #compare that color to black, try again if not
+	
+	lw $t1, lghtRed #turn the black square red
+	sw $t1, 0($a0)
+	
+	j driver
 
 reg_move:
 	# Turns $t4 white, $t4 is next square.
