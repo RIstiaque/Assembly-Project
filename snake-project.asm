@@ -23,8 +23,9 @@ jal top.bottom.border
 # Store snake parts in memory, with tail first starting at the first location after the display ends.
 
 # s4 = first memory position of the list.
-li $t5, 4
 addi $s4, $gp, 4096
+# Constant 4
+li $s6, 4
 # s5 = snakeLength.
 li $s5, 0
 
@@ -38,11 +39,14 @@ move $t1, $t0
 sw $t1, 0($s4)
 
 j draw_body
+
+# Main part of the program.
 driver:
 	jal input
 	jal valid_move
 	jal nxt_Square
-	j collision
+	#j collision
+	j reg_move
 
 top.bottom.border:
 	addi $t2, $0, 0
@@ -73,14 +77,14 @@ draw_body:
 	li $s3, 0
 	wait:
 	jal input
-	li $s6, 119
-	beq $v0, $s6, body2
-	li $s6, 97
-	beq $v0, $s6, body2
-	li $s6, 100
-	beq $v0, $s6, body2
-	li $s6, 115
-	bne $v0, $s6, wait
+	li $t1, 119
+	beq $v0, $t1, body2
+	li $t1, 97
+	beq $v0, $t1, body2
+	li $t1, 100
+	beq $v0, $t1, body2
+	li $t1, 115
+	bne $v0, $t1, wait
 	body2:
 	jal valid_move
 	jal nxt_Square
@@ -93,8 +97,9 @@ draw_body:
 	jal valid_move
 	jal nxt_Square
 	jal eat_yummy_juicy_fruit
+	# Begin testing
 	# End here for testing.
-	j exit
+	j driver
 
 input: # Returns one input
 	li $s1, 0xffff0000
@@ -171,12 +176,11 @@ eat_yummy_juicy_fruit:
 	sw $t1, 0($t0)
 	# Update snake length
 	addi $s5, $s5, 1
+	mul $t5, $s5, $s6
 	move $t0, $t4
-	mul $s6, $s5, $t5
-	add $s6, $s4, $s6
-	# Store new head at top of the "list"
-	sw $t0, 0($s6)
-	#sub $s4, $s4, $s5
+	add $t5, $s4, $t5
+	# Store new head at top of the list.
+	sw $t0, 0($t5)
 	lw $t1 white($0)
 	sw $t1, 0($t0)
 	jr $ra
@@ -192,15 +196,33 @@ collision:
 	jal eat_yummy_juicy_fruit
 	#j gen_fruit
 
-reg_move:
-	lw $t1, white($0)
-	sw $t1, 0($t4)
-	lw $t1, lghtGray($0)
-	sw $t1, 0($t0)
-	lw $t1, black($0)
-	sw $t1, 0($s4)
-	reg_loop:
+gen_fruit: #Generates new fruit
 	
+
+reg_move:
+	# Turns $t4 white, $t4 is next square.
+	lw $t1, white
+	sw $t1, 0($t4)
+	# Turns the previous head position gray
+	lw $t1, lghtGray
+	sw $t1, 0($t0)
+	# Turns the end of the tail black.
+	lw $t1, black
+	lw $t7, 0($s4)
+	sw $t1, 0($t7)
+	li $t7, 0
+	reg_loop:
+		mul $t5, $t7, $s6
+		add $t5, $t5, $s4 # Current part of the tail
+		lw $t6, 4($t5) # Next location
+		sw $t6, 0($t5) # Stored in Current part
+		addi $t7, $t7, 1
+		bne $t7, $s5, reg_loop
+	j driver
+		
+		
+		
+		
 
 exit:
 	li $v0, 10
