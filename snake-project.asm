@@ -5,7 +5,8 @@ lghtGray:	.word 0xD3D3D3
 white:		.word 0xFFFFFF
 black:		.word 0x000000
 yel:		.word 0xFFFF00
-help: 		.asciiz "I am here."
+help: 		.asciiz "\n"
+space:		.asciiz " "
 
 
 .text
@@ -45,8 +46,7 @@ driver:
 	jal input
 	jal valid_move
 	jal nxt_Square
-	#j collision
-	j reg_move
+	j collision
 
 top.bottom.border:
 	addi $t2, $0, 0
@@ -99,7 +99,7 @@ draw_body:
 	jal eat_yummy_juicy_fruit
 	# Begin testing
 	# End here for testing.
-	j driver
+	j gen_fruit
 
 input: # Returns one input
 	li $s1, 0xffff0000
@@ -147,31 +147,27 @@ valid_move:
 		s_here:
 		jr $ra
 		
-nxt_Square:
+nxt_Square: # Makes $t4 the next square. Has NOT made $t0 the next square.
 	# Subs if a
 	li $t4, 97
 	bne $t4, $s3, add_w
 	subi $t4, $t0, 4
-	move $t0, $t4
 	jr $ra
 	# Subs if w
 	add_w:
 	li $t4, 119
 	bne $t4, $s3, add_s
 	subi $t4, $t0, 128
-	move $t0, $t4
 	jr $ra
 	# Adds if s
 	add_s:
 	li $t4, 115
 	bne $t4, $s3, add_d
 	addi $t4, $t0, 128
-	move $t0, $t4
 	jr $ra
 	# Adds if d
 	add_d:
 	addi $t4, $t0, 4
-	move $t0, $t4
 	jr $ra
 
 
@@ -198,7 +194,7 @@ collision:
 	lw $t1, lghtRed($0)
 	bne $t1, $t7, reg_move # make this shit 
 	jal eat_yummy_juicy_fruit
-	#j gen_fruit
+	j gen_fruit
 
 gen_fruit: #Generates new fruit
 	random:  #loops until a suitable place for fruit gen is found
@@ -221,39 +217,41 @@ gen_fruit: #Generates new fruit
 	j driver
 
 reg_move:
-	# Turns $t4 white, $t4 is next square.
-	#lw $t1, white
-	#sw $t1, 0($t4)
-	# Turns the previous head position gray
-	#lw $t1, lghtGray
-	#sw $t1, 0($t0)
 	# Turns the end of the tail black.
 	lw $t1, black
 	lw $t7, 0($s4)
+	move $a0, $t7
 	sw $t1, 0($t7)
-	li $t7, 1
-	reg_loop: # yeah
+	# Turn old head gray.
+	lw $t1, lghtGray
+	sw $t1, 0($t0)
+	# Turn new head white.
+	lw $t1, white
+	sw $t1, 0($t4)
+	li $t7, 0
+	# Because 0 - s5 is the snake, we go one length further to iterate through it all.
+	addi $t8, $s5, 1
+	reg_loop:
 		mul $t5, $t7, $s6
 		add $t5, $t5, $s4 # Current part of the tail
 		lw $t6, 4($t5) # Next location of tail
 		sw $t6, 0($t5) # Stored in Current part
 		addi $t7, $t7, 1
-		bne $t7, $s5, reg_loop
-	# Stores new head as white.
+		bne $t7, $t8, reg_loop
+	# Stores new head.
 	mul $t7, $s5, $s6
 	add $t7, $t7, $s4
 	sw $t4, 0($t7) # Stores head in memory
-	lw $t1, white
-	sw $t1, 0($t4) # Turns head white.
-	# Turns previous head gray.
-	subi $t7, $t7, 4
-	lw $t1, lghtGray
-	sw $t1, 0($t7) # Last next location in reg_loop represents the previous head.
+	
+	# Move the new head to $t0.
+	move $t0, $t4
 	j driver
 		
 		
-		
-		
+fake_input:
+	li $v0, 5
+	syscall
+	jr $ra
 
 exit:
 	li $v0, 10
