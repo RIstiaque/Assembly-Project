@@ -152,22 +152,26 @@ nxt_Square:
 	li $t4, 97
 	bne $t4, $s3, add_w
 	subi $t4, $t0, 4
+	move $t0, $t4
 	jr $ra
 	# Subs if w
 	add_w:
 	li $t4, 119
 	bne $t4, $s3, add_s
 	subi $t4, $t0, 128
+	move $t0, $t4
 	jr $ra
 	# Adds if s
 	add_s:
 	li $t4, 115
 	bne $t4, $s3, add_d
 	addi $t4, $t0, 128
+	move $t0, $t4
 	jr $ra
 	# Adds if d
 	add_d:
 	addi $t4, $t0, 4
+	move $t0, $t4
 	jr $ra
 
 
@@ -218,23 +222,33 @@ gen_fruit: #Generates new fruit
 
 reg_move:
 	# Turns $t4 white, $t4 is next square.
-	lw $t1, white
-	sw $t1, 0($t4)
+	#lw $t1, white
+	#sw $t1, 0($t4)
 	# Turns the previous head position gray
-	lw $t1, lghtGray
-	sw $t1, 0($t0)
+	#lw $t1, lghtGray
+	#sw $t1, 0($t0)
 	# Turns the end of the tail black.
 	lw $t1, black
 	lw $t7, 0($s4)
 	sw $t1, 0($t7)
-	li $t7, 0
-	reg_loop:
+	li $t7, 1
+	reg_loop: # yeah
 		mul $t5, $t7, $s6
 		add $t5, $t5, $s4 # Current part of the tail
-		lw $t6, 4($t5) # Next location
+		lw $t6, 4($t5) # Next location of tail
 		sw $t6, 0($t5) # Stored in Current part
 		addi $t7, $t7, 1
 		bne $t7, $s5, reg_loop
+	# Stores new head as white.
+	mul $t7, $s5, $s6
+	add $t7, $t7, $s4
+	sw $t4, 0($t7) # Stores head in memory
+	lw $t1, white
+	sw $t1, 0($t4) # Turns head white.
+	# Turns previous head gray.
+	subi $t7, $t7, 4
+	lw $t1, lghtGray
+	sw $t1, 0($t7) # Last next location in reg_loop represents the previous head.
 	j driver
 		
 		
