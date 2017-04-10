@@ -4,51 +4,58 @@ drkGray:	.word 0xA9A9A9
 lghtGray:	.word 0xD3D3D3
 white:		.word 0xFFFFFF
 black:		.word 0x000000
-yel:		.word 0xFFFF00
-help: 		.asciiz "\n"
-space:		.asciiz " "
 
+.text 
+	li $a0, 40
+	li $a1, 1000
+	li $a2, 12
+	li $a3, 8
+	li $v0, 31
+	syscall
+	
+	
+	
+main:
+	# Border Start
+	lw $t1, drkGray($0)
+	addi $t0, $gp, 0
+	jal top.bottom.border
+	jal sides
+	jal top.bottom.border
+	# Border end
+	
+	# Snake-Start
+	
+	# Store snake parts in memory, with tail first starting at the first location after the display ends.
+	# s4 = first memory position of the list.
+	addi $s4, $gp, 4096
+	# Constant 4
+	li $s6, 4
+	# s5 = snakeLength.
+	li $s5, 0
+	
+	# Create Head
+	lw $t1, white($0)
+	addi $t0, $gp, 1984
+	sw $t1, 0($t0)
+	
+	# Store head position
+	move $t1, $t0
+	sw $t1, 0($s4)
+	
+	j draw_body
+	
+	# Main part of the program.
+	driver:
+		jal input
+		jal valid_move
+		jal nxt_Square
+		jal move_sound
+		j collision
 
-.text
+	# End main
 
-# Border Start
-lw $t1, drkGray($0)
-addi $t0, $gp, 0
-jal top.bottom.border
-jal sides
-jal top.bottom.border
-# Border end
-
-# Snake-Start
-
-# Store snake parts in memory, with tail first starting at the first location after the display ends.
-
-# s4 = first memory position of the list.
-addi $s4, $gp, 4096
-# Constant 4
-li $s6, 4
-# s5 = snakeLength.
-li $s5, 0
-
-# Create Head
-lw $t1, white($0)
-addi $t0, $gp, 1984
-sw $t1, 0($t0)
-
-# Store head position
-move $t1, $t0
-sw $t1, 0($s4)
-
-j draw_body
-
-# Main part of the program.
-driver:
-	jal input
-	jal valid_move
-	jal nxt_Square
-	j collision
-
-top.bottom.border:
+top.bottom.border: # Draws the top and bottom borders.
 	addi $t2, $0, 0
 	addi $t3, $0, 32
 	t.b.loop:
@@ -58,7 +65,7 @@ top.bottom.border:
 	bne $t2, $t3, t.b.loop
 	jr $ra
 	
-sides:
+sides: # Draws the left and right borders.
 	addi $t4, $0, 0
 	addi $t5, $0, 30
 	#addi $t0, $t0, 4
@@ -72,10 +79,10 @@ sides:
 	jr $ra
 
 	
-draw_body:
+draw_body: # Draws the 3 body parts of the snake. Note: Snake is unable to kill itself within this drawing process.
 	# $s3 is previous key.
 	li $s3, 0
-	wait:
+	wait: # Waits for a valid input.
 	jal input
 	li $t1, 119
 	beq $v0, $t1, body2
@@ -85,20 +92,18 @@ draw_body:
 	beq $v0, $t1, body2
 	li $t1, 115
 	bne $v0, $t1, wait
-	body2:
+	body2: # Starts body part 1.
 	jal valid_move
 	jal nxt_Square
 	jal eat_yummy_juicy_fruit
-	jal input
+	jal input # Starts body part 2.
 	jal valid_move
 	jal nxt_Square
 	jal eat_yummy_juicy_fruit
-	jal input
+	jal input # Starts body part 3.
 	jal valid_move
 	jal nxt_Square
 	jal eat_yummy_juicy_fruit
-	# Begin testing
-	# End here for testing.
 	j gen_fruit
 
 input: # Returns one input
@@ -112,7 +117,7 @@ input: # Returns one input
 		lw $v0, 4($s1)
 		jr $ra
 	
-valid_move:
+valid_move: # Checks if the key pressed is valid or not. i.e. Can't have the snake move left from a if it is already moving to the right (d).
 	li $t4, 97
 	beq $t4, $v0, a_valid
 	li $t4, 119
@@ -147,7 +152,7 @@ valid_move:
 		s_here:
 		jr $ra
 		
-nxt_Square: # Makes $t4 the next square. Has NOT made $t0 the next square.
+nxt_Square: # Calculates and makes $t4 the next square.
 	# Subs if a
 	li $t4, 97
 	bne $t4, $s3, add_w
@@ -171,52 +176,51 @@ nxt_Square: # Makes $t4 the next square. Has NOT made $t0 the next square.
 	jr $ra
 
 
-eat_yummy_juicy_fruit:
-	lw $t1, lghtGray($0)
-	sw $t1, 0($t0)
+eat_yummy_juicy_fruit: # This function will increase the snake's overall length.
+	lw $t1, lghtGray($0) 
+	sw $t1, 0($t0) # Makes the current head gray.
 	# Update snake length
 	addi $s5, $s5, 1
 	mul $t5, $s5, $s6
-	move $t0, $t4
+	move $t0, $t4 # Makes the current head equal to the next head.
 	add $t5, $s4, $t5
 	# Store new head at top of the list.
 	sw $t0, 0($t5)
 	lw $t1 white($0)
-	sw $t1, 0($t0)
+	sw $t1, 0($t0) # Fills in the current head to white.
 	jr $ra
+	
 	
 collision:
 	lw $t1, lghtGray($0)
 	lw $t7, 0($t4)
-	beq $t1, $t7, exit
+	beq $t1, $t7, exit # If the spot is light Gray, game will be over.
 	lw $t1, drkGray($0)
-	beq $t1, $t7, exit
+	beq $t1, $t7, exit # If the spot is dark Gray, game will be over.
 	lw $t1, lghtRed($0)
-	bne $t1, $t7, reg_move # make this shit 
+	bne $t1, $t7, reg_move # Checks for fruit.
+	jal eat_sound
 	jal eat_yummy_juicy_fruit
 	j gen_fruit
+
 
 gen_fruit: #Generates new fruit
 	random:  #loops until a suitable place for fruit gen is found
 		li $a1, 991 # gen a random number with uppper bound (3964/4)
 		li $v0, 42
 		syscall
-		
 		li $t5, 4
 		mul $a0, $a0, $t5  #multiply that number by four so it is a valid square address
 		add $a0, $gp, $a0 #check color of that random square
 		lw $t7, 0($a0)
-	
 		lw $t1, black
-	
 		bne $t7, $t1, random  #compare that color to black, try again if not
-	
 	lw $t1, lghtRed #turn the black square red
 	sw $t1, 0($a0)
-	
-	j driver
+	j driver # Loop to driver to continue game.
 
-reg_move:
+
+reg_move: # In the case that there is no collision with the next square.
 	# Turns the end of the tail black.
 	lw $t1, black
 	lw $t7, 0($s4)
@@ -246,13 +250,53 @@ reg_move:
 	# Move the new head to $t0.
 	move $t0, $t4
 	j driver
-		
-		
-fake_input:
-	li $v0, 5
+
+move_sound:
+	li $a0, 40
+	li $a1, 1000
+	li $a2, 8
+	li $a3, 127
+	li $v0, 31
+	syscall
+	jr $ra
+	
+game_over_sound:
+	li $a0, 50
+	li $a1, 1000
+	li $a2, 23	
+	li $a3, 127
+	li $v0, 31
+	syscall
+	li $a0, 700
+	li $v0, 32
+	syscall
+	li $a0, 40
+	li $a1, 1000
+	li $a2, 23	
+	li $a3, 127
+	li $v0, 31
+	syscall
+	li $a0, 700
+	li $v0, 32
+	syscall
+	li $a0, 35
+	li $a1, 3000
+	li $a2, 23	
+	li $a3, 127
+	li $v0, 31
+	syscall
+	jr $ra
+
+eat_sound:
+	li $a0, 80
+	li $a1, 1000
+	li $a2, 115
+	li $a3, 127
+	li $v0, 31
 	syscall
 	jr $ra
 
 exit:
+	jal game_over_sound
 	li $v0, 10
 	syscall		# syscall to exit program
