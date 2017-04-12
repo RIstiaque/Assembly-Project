@@ -107,6 +107,11 @@ draw_body: # Draws the 3 body parts of the snake. Note: Snake is unable to kill 
 	j gen_fruit
 
 input: # Returns one input
+
+	li $a0, 700	#waits so you can run at full speed
+	li $v0, 32
+	syscall
+
 	li $s1, 0xffff0000
 	lw $s2, 0($s1)
 	bnez $s2, read_val
