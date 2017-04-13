@@ -6,15 +6,6 @@ white:		.word 0xFFFFFF
 black:		.word 0x000000
 
 .text 
-	li $a0, 40
-	li $a1, 1000
-	li $a2, 12
-	li $a3, 8
-	li $v0, 31
-	syscall
-	
-	
-	
 main:
 	# Border Start
 	lw $t1, drkGray($0)
